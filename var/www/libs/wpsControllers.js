@@ -15,7 +15,8 @@ wpsApp.controller ('wpsCtrl', function ($scope, $http) {
     // first of simulation
     //$scope.worldstateUrl = "http://crisma.cismet.de/pilotEv2/staging/icmm_api/CRISMA.worldstates/373";
     // last of simulation
-    $scope.worldstateUrl = "http://crisma.cismet.de/pilotEv2/staging/icmm_api/CRISMA.worldstates/445";
+    // $scope.worldstateUrl = "http://crisma.cismet.de/pilotEv2/staging/icmm_api/CRISMA.worldstates/445";
+    $scope.worldstateUrl = "http://192.168.142.100:48014/icmm_api/CRISMA.worldstates/445";
 
 
     $scope.descriptionTable = [];
