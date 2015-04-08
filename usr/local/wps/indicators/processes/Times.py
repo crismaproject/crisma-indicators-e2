@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-08 08:56:15 peter"
+Time-stamp: "2015-04-08 16:24:17 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -133,7 +133,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "iconResource": "flower_dead_16.png",
                         "value": -1,
                         "unit": "minutes"
-                        }
+                        },
                     "UsedTacticalAreas": {
                         "displayName": "Used Tactical Areas",
                         "iconResource": "flower_dead_16.png",
