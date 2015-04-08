@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-02 10:08:02 peter"
+Time-stamp: "2015-04-08 08:50:32 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -75,37 +75,41 @@ kpi;RespondersPerPatient; Responders per Patient: Responder / Patient ratio;numb
     def calculateIndicator(self):
         # Define values to be used if indicator can not be calculated (e.g. missing input data)
         self.result = {
-         'kpi': {
-           "persons": {
-             "displayName": "Patients",
-             "iconResource": "flower_16.png",
-             "Patients": {
-                "displayName": "Patients",
-                "iconResource": "flower_dead_16.png",
-                "value": 0,
-                "unit": "Persons"
-             },
-             "PatientsThatWalk": {
-                "displayName": "Walking patients",
-                "iconResource": "flower_dead_16.png",
-                "value": 0,
-                "unit": "Persons"
-             },
-             "Responders": {
-                "displayName": "Responders",
-                "iconResource": "flower_dead_16.png",
-                "value": 0,
-                "unit": "Persons"
-             },
-             "ResponderPerPatient": {
-                "displayName": "Responders per Patient",
-                "iconResource": "flower_dead_16.png",
-                "value": 0,
-                "unit": ""
-             }
-           }
-         }
-        }
+            'kpi': {
+                "Situation": {
+                    "displayName": "Situation",
+                    "iconResource": "flower_16.png",
+                    "Patients": {
+                        "displayName": "Patients",
+                        "iconResource": "flower_dead_16.png",
+                        "value": 0,
+                        "unit": "Persons"
+                        },
+                    "PatientsThatWalk": {
+                        "displayName": "Walking patients",
+                        "iconResource": "flower_dead_16.png",
+                        "value": 0,
+                        "unit": "Persons"
+                        }
+                    },
+                "Tactics": {
+                    "displayName": "Tactics",
+                    "iconResource": "flower_16.png",
+                    "Responders": {
+                        "displayName": "Responders",
+                        "iconResource": "flower_dead_16.png",
+                        "value": 0,
+                        "unit": "Persons"
+                        },
+                    "ResponderPerPatient": {
+                        "displayName": "Responders per Patient",
+                        "iconResource": "flower_dead_16.png",
+                        "value": 0,
+                        "unit": ""
+                        }
+                    }
+                }
+            }
 
         # calculate indicator value
 
@@ -251,8 +255,8 @@ kpi;RespondersPerPatient; Responders per Patient: Responder / Patient ratio;numb
                     }
                 ],
             'kpi': {
-                "persons": {
-                    "displayName": "Patients",
+                "Situation": {
+                    "displayName": "Situation",
                     "iconResource": "flower_16.png",
                     "Patients": {
                         "displayName": "Patients",
@@ -265,7 +269,11 @@ kpi;RespondersPerPatient; Responders per Patient: Responder / Patient ratio;numb
                         "iconResource": "flower_dead_16.png",
                         "value": numberOfPatientsThatWalk,
                         "unit": "Persons"
-                        },
+                        }
+                    },
+                "Tactics": {
+                    "displayName": "Tactics",
+                    "iconResource": "flower_16.png",
                     "Responders": {
                         "displayName": "Responders",
                         "iconResource": "flower_dead_16.png",

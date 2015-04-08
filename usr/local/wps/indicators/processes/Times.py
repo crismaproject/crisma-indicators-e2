@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-07 13:47:41 peter"
+Time-stamp: "2015-04-08 08:56:15 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -124,8 +124,8 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
         self.result = {
             'indicator': [],
             'kpi': {
-                "times": {
-                    "displayName": "Times",
+                "Tactics": {
+                    "displayName": "Tactics",
                     "iconResource": "flower_16.png",
 
                     "SecoundResourceRequest": {
@@ -133,7 +133,20 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "iconResource": "flower_dead_16.png",
                         "value": -1,
                         "unit": "minutes"
-                        },
+                        }
+                    "UsedTacticalAreas": {
+                        "displayName": "Used Tactical Areas",
+                        "iconResource": "flower_dead_16.png",
+                        "value": -1,
+                        "unit": ""
+                        }
+                    },
+
+                "Accomplishment": {
+                    "displayName": "Accomplishment",
+                    "iconResource": "flower_16.png",
+
+
                     "LastPreTriage": {
                         "displayName": "All patients got pre-triage",
                         "iconResource": "flower_dead_16.png",
@@ -188,21 +201,10 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "value": -1,
                         "unit": "minutes"
                         }
-                    },
-                "areas": {
-                    "displayName": "Areas",
-                    "iconResource": "flower_16.png",
-
-                    "UsedTacticalAreas": {
-                        "displayName": "Used Tactical Areas",
-                        "iconResource": "flower_dead_16.png",
-                        "value": -1,
-                        "unit": ""
-                        }
                     }
                 }
             }
-        
+            
         self.status.set("Start collecting input data", 20)
 
         # calculate indicator value
@@ -563,7 +565,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['SecoundResourceRequest']['value'] = minutesSecondVehicle
+            self.result['kpi']['Tactics']['SecoundResourceRequest']['value'] = minutesSecondVehicle
 
         if tLastPreTriage != None:
             self.result['indicator'].append ({
@@ -584,7 +586,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['LastPreTriage']['value'] = (tLastPreTriage - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['LastPreTriage']['value'] = (tLastPreTriage - t0).total_seconds() / 60
 
 
         if tFirstRedTreated != None:
@@ -606,7 +608,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['FirstRedTreated']['value'] = (tFirstRedTreated - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['FirstRedTreated']['value'] = (tFirstRedTreated - t0).total_seconds() / 60
 
 
         if tLastRedTreated != None:
@@ -628,7 +630,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['LastRedTreated']['value'] = (tLastRedTreated - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['LastRedTreated']['value'] = (tLastRedTreated - t0).total_seconds() / 60
 
 
         if tLastRedEvacuated != None:
@@ -650,7 +652,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['LastRedTreated']['value'] = (tLastRedEvacuated - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['LastRedEvacuated']['value'] = (tLastRedEvacuated - t0).total_seconds() / 60
 
         if tLastRedInHospital != None:
             self.result['indicator'].append ({
@@ -671,7 +673,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['LastRedInHospital']['value'] = (tLastRedInHospital - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['LastRedInHospital']['value'] = (tLastRedInHospital - t0).total_seconds() / 60
 
 
         if tLoadingAreaBuild != None:
@@ -693,7 +695,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['LoadingAreaBuild']['value'] = (tLoadingAreaBuild - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['LoadingAreaBuild']['value'] = (tLoadingAreaBuild - t0).total_seconds() / 60
 
 
         if tStagingAreaBuild != None:
@@ -715,7 +717,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['StagingAreaBuild']['value'] = (tStagingAreaBuild - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['StagingAreaBuild']['value'] = (tStagingAreaBuild - t0).total_seconds() / 60
 
 
         if tTreatmentAreaBuild != None:
@@ -737,7 +739,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['TreatmentAreaBuild']['value'] = (tTreatmentAreaBuild - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['TreatmentAreaBuild']['value'] = (tTreatmentAreaBuild - t0).total_seconds() / 60
 
 
         if tLastInHospital != None:
@@ -759,7 +761,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['times']['LastInHospital']['value'] = (tLastInHospital - t0).total_seconds() / 60
+            self.result['kpi']['Accomplishment']['LastInHospital']['value'] = (tLastInHospital - t0).total_seconds() / 60
 
         if usedTacticalAreas > -1:
             data = []
@@ -781,7 +783,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                     'type': "histogram",
                     'data': data
                     })
-            self.result['kpi']['areas']['UsedTacticalAreas']['value'] = usedTacticalAreas
+            self.result['kpi']['Tactics']['UsedTacticalAreas']['value'] = usedTacticalAreas
             
 
        

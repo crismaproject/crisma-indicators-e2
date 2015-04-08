@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-02 16:46:41 peter"
+Time-stamp: "2015-04-08 08:49:47 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -70,8 +70,8 @@ kpi;Weather;Weather;Weather conditions;number
         # Define values to be used if indicator can not be calculated (e.g. missing input data)
         self.result = {
             'kpi': {
-                "Weather": {
-                    "displayName": "Weather",
+                "Situation": {
+                    "displayName": "Situation",
                     "iconResource": "flower_16.png",
                     "Weather": {
                         "displayName": "Weather",
@@ -112,6 +112,6 @@ kpi;Weather;Weather;Weather conditions;number
                     'data': weather
                     }
 
-        self.result['kpi']['Weather']['Weather']['value'] = weather
+        self.result['kpi']['Situation']['Weather']['value'] = weather
 
         return 
