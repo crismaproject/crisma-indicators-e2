@@ -3,8 +3,14 @@ var x2js = new X2JS();
 
 
 wpsApp.controller ('wpsCtrl', function ($scope, $http) {
-    $scope.wpsEndpoint = "cgi-bin/pywps.cgi";
-    $scope.icmmEndpoint = "/icmm_api";
+    // default values
+    $scope.serverTmp = "https://crisma-pilotE.ait.ac.at"
+    $scope.wpsEndpointTmp = $scope.serverTmp + "/indicators/cgi-bin/pywps.cgi";
+    $scope.icmmEndpointTmp = $scope.serverTmp + "/icmm_api";
+
+    // really used values
+    $scope.wpsEndpoint = $scope.wpsEndpointTmp;
+    $scope.icmmEndpoint = $scope.icmmEndpointTmp;
 
     // list of indicators from WPS capabilities - to be updated from WPS Capabilities
     $scope.indicators = [];  // ["deathsIndicator", "seriouslyDeterioratedIndicator", "improvedIndicator", "lifeIndicator"];
@@ -122,7 +128,7 @@ wpsApp.controller ('wpsCtrl', function ($scope, $http) {
 	if ($scope.allWorldstateData == null) {
     	    $http({
 		method: "GET",
-		url: $scope.icmmEndpoint + "/CRISMA.worldstates/?level=1&fields=childworldstates,categories&deduplicate=true&ommitNullValues=true"
+		url: $scope.icmmEndpoint + "/CRISMA.worldstates/?level=1&fields=childworldstates,categories&deduplicate=true&ommitNullValues=true&limit=10000"
 	    }).
 		success(function(data, status, headers, config) {
 		    // console.log (JSON.stringify (data));
@@ -279,21 +285,29 @@ wpsApp.controller ('wpsCtrl', function ($scope, $http) {
 		// console.log (data);
 		if (data != null) {
 		    var response = x2js.xml_str2json (data)
-		    console.log (JSON.stringify (response));
-
-		    if (('Status' in response.ExecuteResponse) && ('ProcessFailed' in response.ExecuteResponse.Status)) {
-			$scope.results[$scope.worldstatesToExecute[wsNo]][$scope.processesToExecute[pNo]] = response.ExecuteResponse.Status.ProcessFailed.ExceptionReport.Exception.ExceptionText["__text"];
-		    } else if ('ProcessOutputs' in response.ExecuteResponse) {
+		    // console.log (JSON.stringify (response));
+		    var msgFound = false;
+		    if ('ProcessOutputs' in response.ExecuteResponse) {
 			// search my status output
 			$scope.results[$scope.worldstatesToExecute[wsNo]][$scope.processesToExecute[pNo]] = "status ProcessOutput missing";
 			for (var o = 0; o < response.ExecuteResponse.ProcessOutputs.Output.length; o++) {
-			    console.log (JSON.stringify (response.ExecuteResponse.ProcessOutputs.Output[o]))
-			    if ("status" === response.ExecuteResponse.ProcessOutputs.Output[o].Identifier["__text"]) {
+			    // console.log (JSON.stringify (response.ExecuteResponse.ProcessOutputs.Output[o]))
+			    if ("statusmessage" === response.ExecuteResponse.ProcessOutputs.Output[o].Identifier["__text"]) {
 				$scope.results[$scope.worldstatesToExecute[wsNo]][$scope.processesToExecute[pNo]] = response.ExecuteResponse.ProcessOutputs.Output[o].Data.LiteralData["__text"];
+				msgFound = true;
 				break;
 			    }
-			}
-		    } else {
+			} 
+		    } 
+		    if ((!msgFound) && ('Status' in response.ExecuteResponse) && ('ProcessFailed' in response.ExecuteResponse.Status)) {
+			$scope.results[$scope.worldstatesToExecute[wsNo]][$scope.processesToExecute[pNo]] = response.ExecuteResponse.Status.ProcessFailed.ExceptionReport.Exception.ExceptionText["__text"];
+			msgFound = true;
+		    } 
+		    if ((!msgFound) && ('Status' in response.ExecuteResponse) && ('ProcessSucceeded' in response.ExecuteResponse.Status)) {
+			$scope.results[$scope.worldstatesToExecute[wsNo]][$scope.processesToExecute[pNo]] = response.ExecuteResponse.Status.ProcessSucceeded["__text"];
+			msgFound = true;
+		    } 
+		    if (!msgFound) {
 			$scope.results[$scope.worldstatesToExecute[wsNo]][$scope.processesToExecute[pNo]] = "Status missing";
 		    }
 		} else {
@@ -308,7 +322,27 @@ wpsApp.controller ('wpsCtrl', function ($scope, $http) {
     };
 
 
+    $scope.init = function () {
+	$scope.wpsEndpoint = $scope.wpsEndpointTmp;
+	$scope.icmmEndpoint = $scope.icmmEndpointTmp;
+	$scope.indicators = []; 
+	$scope.indicator = null; 
+	$scope.indicatorsSelected = []; 
+	$scope.descriptionTable = [];
+	$scope.worldstateUrl = $scope.icmmEndpoint + "/CRISMA.worldstates/445";
+	$scope.worldstateURLsBaseline = [];
+	$scope.worldstateUrlBaseline = null;
+	$scope.worldstateURLsLeaf = [];
+	$scope.worldstateUrlLeaf = null;
+	$scope.worldstateOptionSelected = "Single";
+	$scope.allWorldstateData = null;
+	$scope.processesToExecute = [];
+	$scope.worldstatesToExecute = [$scope.worldstateUrl];
+	$scope.results = {};
 
-    $scope.loadIndicators();
+	$scope.loadIndicators();
+    }
+
+    $scope.init();
 
 });

@@ -3,7 +3,7 @@
 /home/peter/public_html/indicators/expert.html
 Peter Kutschera, Tue Apr  7 15:08:11 2015$
 $Id$
-Time-stamp: "2015-04-08 16:25:05 peter"
+Time-stamp: "2015-04-08 17:53:15 peter"
 Peter.Kutschera@ait.ac.at   (AIT - Austrian Institute of Technology)
 -->
 
@@ -58,6 +58,16 @@ Peter.Kutschera@ait.ac.at   (AIT - Austrian Institute of Technology)
 
   <form class="form-horizontal" role="form">
     
+    <div class="form-group">
+      <label for="wpsEndpoint">WPS endpoint:</label>
+      <input id="wpsEndpoint" class="form-control" type="url" ng-model="wpsEndpointTmp"></input> 
+      <label for="wpsEndpoint">ICMM endpoint:</label>
+      <input id="icmmEndpoint" class="form-control" type="url" ng-model="icmmEndpointTmp"></input> 
+      <button type="button" class="btn btn-default" ng-click="init()" >Start wich changed service endpoints</button>
+    </div>
+
+    <hr>
+
     <div class="form-group">
       <label for="iselect">Select process(es) to use:</label>
       <div  id="iselect" ng-repeat="indi in indicators">

@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-08 08:50:32 peter"
+Time-stamp: "2015-04-08 17:47:24 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -204,7 +204,7 @@ kpi;RespondersPerPatient; Responders per Patient: Responder / Patient ratio;numb
             logging.info (ep)
             if ep["entityId"] in vehiclesIds:
                 numResponders = float (ep["entityPropertyValue"].replace (",", "."))
-                logging.log ("numResponders = {0}".format (numResponders))
+                logging.info ("numResponders = {0}".format (numResponders))
                 numberOfResponders += numResponders
         
         self.status.set("Calculated number of responders: {0} in {1} vehicles".format (numberOfResponders, len (vehiclesIds)), 49)

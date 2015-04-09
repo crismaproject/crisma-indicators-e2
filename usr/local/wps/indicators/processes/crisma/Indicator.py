@@ -1,6 +1,6 @@
 """
 Peter Kutschera, 2014-11-27
-Time-stamp: "2015-04-08 16:38:58 peter"
+Time-stamp: "2015-04-09 08:45:37 peter"
 
 This is a base class for indcators holding all common code
 Includes basic handling of ICMM and OOI-WSR.
@@ -66,7 +66,7 @@ class Indicator(WPSProcess):
         self.kpi=self.addLiteralOutput(identifier = "kpi",
                                        type = type (""),
                                        title = "kpi value")
-        self.statusresult=self.addLiteralOutput(identifier = "status",
+        self.statusmessage=self.addLiteralOutput(identifier = "statusmessage",
                                        type = type (""),
                                        title = "execution status")
         # for ICMM and OOI
@@ -178,11 +178,12 @@ class Indicator(WPSProcess):
         if ((self.doUpdate == 1) or (indicatorURL is None)):
             try:
                 self.calculateIndicator ()
-                self.statusresult.setValue ("OK")
+                self.statusmessage.setValue ("OK")
 
             except Exception, e:
                 logging.exception ("calculateIndicator: {0}".format (str(e.args)))
-                self.statusresult.setValue ("calculateIndicator: {0}".format (str(e.args)))
+                self.statusmessage.setValue ("calculateIndicator: {0}".format (str(e.args)))
+                self.status.set("save result: {0}".format (str(e.args)))
 
             try:
                 if 'indicator' in self.result:
@@ -202,9 +203,17 @@ class Indicator(WPSProcess):
                     self.kpi.setValue (json.dumps (self.result['kpi']))
                     ICMMkpiValueURL = ICMM.addKpiValToICMM (self.ICMMworldstate.id, self.identifier, self.title, self.result['kpi'], self.ICMMworldstate.endpoint)
                     self.kpiRef.setValue(escape (ICMMkpiValueURL))
+
+                self.statusmessage.setValue ("OK")
+                self.status.set ("OK")
+                
             except Exception, e:
                 logging.exception ("save result: {0}".format (str(e.args)))
-                self.statusresult.setValue ("save result: {0}".format (str(e.args)))
+                self.statusmessage.setValue ("save result: {0}".format (str(e.args)))
+                self.status.set("save result: {0}".format (str(e.args)))
+        else:
+            self.statusmessage.setValue ("OK, indicator already exists")
+            self.status.set ("OK, indicator already exists")
 
         return
 
