@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-08 16:24:17 peter"
+Time-stamp: "2015-04-14 14:17:07 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -63,38 +63,33 @@ class Process(Indicator):
             title="Time related",
             abstract="""Calculate some time intervals.
 
-indicator;SecoundResourceRequest;Secound Resource Request;Time until Secound Resource Request;timeintervals
-kpi;SecoundResourceRequest;Secound Resource Request;Time until Secound Resource Request;number
 
-indicator;LastPreTriage;Last Pre-Triage;Time until all patients got pre-triage;timeintervals
 kpi;LastPreTriage;Last Pre-Triage;Time until all patients got pre-triage;number
-
-indicator;FirstReadTreated;First red Patient treated;Time until first red Patient treated;timeintervals
-kpi;FirstReadTreated;First red Patient treated;Minutes until first red Patient treated;number
-
-indicator;LastRedTreated;Last red Patient treated;Time until all red patients are treated;timeintervals
+kpi;LastInHospital;Last Patient in Hospital;Time until all patients are in a hospital;number
+kpi;FirstRedTreated;First red Patient treated;Minutes until first red Patient treated;number
 kpi;LastRedTreated;Last red Patient treated;Time until all red patients are treated;number
-
-indicator;LastRedEvacuated;Last red Patient evacuated;Time until all red patients are evacuated;timeintervals
 kpi;LastRedEvacuated;Last red Patient evacuated;Time until all red patients are evacuated;number
-
-indicator;LastRedInHospital;Last red Patient in Hospital;Time until all red patients are in a hospital;timeintervals
 kpi;LastRedInHospital;Last red Patient in Hospital;Time until all red patients are in a hospital;number
 
-indicator;LastInHospital;Last Patient in Hospital;Time until all patients are in a hospital;timeintervals
-kpi;LastInHospital;Last Patient in Hospital;Time until all patients are in a hospital;number
+kpi;SecoundResourceRequest;Secound Resource Request;Time until Secound Resource Request;number
 
-indicator;LoadingAreaBuild;Loading-Area build;Time until first loading area is build;timeintervals
 kpi;LoadingAreaBuild;Loading-Area build;Time until first loading area is build;number
-
-indicator;StagingAreaBuild;Staging-Area build;Time until first staging area is build;timeintervals
 kpi;StagingAreaBuild;Staging-Area build;Time until first staging area is build;number
-
-indicator;TreatmentAreaBuild;Treatment-Area build;Time until first treatment area is build;timeintervals
 kpi;TreatmentAreaBuild;Treatment-Area build;Time until first treatment area is build;number
 
-indicator;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;histogram
 kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
+
+
+indicator;SecoundResourceRequest;Secound Resource Request;Time until Secound Resource Request;timeintervals
+indicator;LoadingAreaBuild;Loading-Area build;Time until first loading area is build;timeintervals
+indicator;StagingAreaBuild;Staging-Area build;Time until first staging area is build;timeintervals
+indicator;TreatmentAreaBuild;Treatment-Area build;Time until first treatment area is build;timeintervals
+indicator;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;histogram
+
+indicator;First_Color_State;First injury-type Patient in state;From start to first Patient of injury type in treatment state;timeintervals
+indicator;Last_Color_State;Last injury-type Patient in state;From start till last Patient of injury type in treatment state;timeintervals
+indicator;In_Color_State;First to last injury-type Patient in state;From first Patient to last Patient of injury type in treatment state;timeintervals
+
 
 """)
 
@@ -220,35 +215,51 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
         # tNow = self.getTimeFromICMMws (self.ICMMworldstate.id) # this WorldState
         minutesSecondVehicle = None  # 2nd vehicle request
         tLastPreTriage = None  # Last patient has been pre-triaged
-        tFirstRedTreated = None # 1st red patient treated
-        tLastRedTreated = None # last red patient treated
-        tLastRedEvacuated = None # last red patient evacuated
-        tLastRedInHospital = None # last red patient in hospital
+        #tFirstRedTreated = None # 1st red patient treated
+        #tLastRedTreated = None # last red patient treated
+        #tLastRedEvacuated = None # last red patient evacuated
+        #tLastRedInHospital = None # last red patient in hospital
         tLoadingAreaBuild = None 
         tStagingAreaBuild = None
         tTreatmentAreaBuild = None
-        tLastInHospital = None # last patient in hospital
+        #tLastInHospital = None # last patient in hospital
         usedTacticalAreas = -1
 
         # count patients - needed to answer questions like "When got the LAST patient ....?"
         # Answer: When ...  was true for each patient in at least one previous WS
         # This is only done once as it never changes (No one is born or dies)
+        #  [id, id,...]
         patientsIdList = None 
-        redPatientsIdList = None 
+        #  {'RED': [id, id,..],..
+        coloredPatientsIdList = None
+        #  {id: 'RED', id: 'GREEN, ...
+        patientsIdColorList = None 
+        # the following lists are accumulated starting from the baseline !
         # list of patient that where already ....
-        preTriageList = {}
-        redTreatedList = {}
-        redEvacuatedList = {}
-        redInHospitalList = {}
-        inHospitalList = {}
+        #  {'Evacuated': [id, id,..]
+        statedPatientIdList = None
+        #  {'RED': {'Evacuated': [id, id,...],..},..}
+        coloredStatedPatientsIdList = None
+        # times
+        #  {'Evacuated': time, ..}
+        tFirstState = None
+        #  {'RED': {'Evacuated': time, ..},..}
+        tFirstColorState = None
+        #  {'Evacuated': time, ..}
+        tLastState = None
+        #  {'RED': {'Evacuated': time, ..},..}
+        tLastColorState = None
         # Area lists
         areaIdLists = None
         # Vehicle command times
         vehicleCommandTimes = []
 
+        # Loop over all parent worldstates
         for i in range (0, len (parents)):
             wsid = parents[i]
-            logging.info ("get ws {0}".format (wsid))
+            # Time of this worldstate
+            tWsid = self.getTimeFromICMMws (wsid)
+            logging.info ("get ws {0}: {1}".format (wsid, tWsid.isoformat()))
             ooiWorldstateURL = ICMM.getOOIRef (wsid, 'OOI-worldstate-ref', baseUrl=self.ICMMworldstate.endpoint)
             logging.info ("  ooiWorldstateURL = {0}".format (ooiWorldstateURL))
             if (ooiWorldstateURL is None):
@@ -258,19 +269,19 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
             # logging.info ("ooiWorldState = {0}".format (ooiWorldstate))
             if (ooiWorldstate.endpoint is None):
                 return "invalid OOI ref: {0}".format (ooiWorldstate)
-        
-
+            
             logging.info("Request input data for OOI WorldState = {0}".format (ooiWorldstate.id))
             params = {
                 'wsid' :  ooiWorldstate.id 
                 }
             jsonData = OOI.getJson ("{0}/EntityProperty".format (self.OOIworldstate.endpoint), params=params) 
-
             # this now contaions ALL EntityPropertyIds !
-            
+
+            # This in only done once, so for the base worldstate
             if patientsIdList == None:
                 logging.info ("looking for exposed patients")
                 patientsIdList = []
+                patientsIdColorList = {}
                 for ep in jsonData:
                     if (476 != ep["entityTypePropertyId"]):       # patient-is-exposed
                         continue
@@ -278,8 +289,10 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                     if exposed:
                         patientsIdList.append (ep["entityId"])
                 logging.info (" found {0} exposed patients: {1}".format (len (patientsIdList), patientsIdList))
-                logging.info (" looking for RED exposed patients")
-                redPatientsIdList = []
+                logging.info (" looking for injury types of exposed patients")
+                statedPatientIdList = {}
+                coloredPatientsIdList = {}
+                coloredStatedPatientsIdList = {}
                 # 2 steps: 
                 # 1.: injuryType -> Default_Triage-Level (201)
                 injuryTypeTriageLevel = {}
@@ -291,7 +304,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                     if ep["entityTypeProperty"]['entityTypePropertyType'] != 2: 
                         logging.error (" Property default_Traige-Lavel (201) is not of type 2 (String)!")
                         continue 
-                    logging.info ("  injuryTypeTriageLevel[{0}] = {1}".format (ep['entityId'], ep["entityPropertyValue"]))
+                    # logging.info ("  injuryTypeTriageLevel[{0}] = {1}".format (ep['entityId'], ep["entityPropertyValue"]))
                     injuryTypeTriageLevel[ep['entityId']] = ep["entityPropertyValue"]
                 # 2. filter patients: parientId -> InjuryType (473); 
                 for ep in jsonData:
@@ -306,11 +319,29 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                     if epv not in injuryTypeTriageLevel:
                         logging.error ("  injuryType {1} of patient {0} not found!".format (ep["entityId"], ep["entityPropertyValue"]))
                         continue 
-                    if (injuryTypeTriageLevel[epv] == 'RED'):
-                        redPatientsIdList.append (ep["entityId"])
-                logging.info (" found {0} RED exposed patients: {1}".format (len (redPatientsIdList), redPatientsIdList))
+                    color = injuryTypeTriageLevel[epv]
+                    patientsIdColorList[ep["entityId"]] = color
+                    if (color not in coloredPatientsIdList):
+                        coloredPatientsIdList[color] = []
+                    coloredPatientsIdList[color].append (ep["entityId"])
+                for color in coloredPatientsIdList:
+                    logging.info (" found {0} {2} exposed patients: {1}".format (len (coloredPatientsIdList[color]), coloredPatientsIdList[color], color))
+                for id in patientsIdList:
+                    if id not in patientsIdColorList:
+                        logging.error ("Input data error: Injury type of patient {0} not defined, removing".format (id))
+                        patientsIdList.remove (id)
 
-            # create area lists
+                # Now I know all the colors
+                tFirstState = {}
+                tLastState = {}
+                tFirstColorState = {}
+                tLastColorState = {}
+                for color in coloredPatientsIdList:
+                    tFirstColorState[color] = {}
+                    tLastColorState[color] = {}
+        
+
+            # create area lists - only once
             if areaIdLists == None:
                 logging.info ("looking for areas")
                 areaIdListsAll = {}
@@ -341,7 +372,8 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                 logging.info (" Number of used tactical areas: {0}".format (usedTacticalAreas))
                
 
-
+            # the rest is done for each worldstate from baseworldstate down to actual worldstate
+            # 2nd Vehicle request
             if minutesSecondVehicle == None:
                 logging.info ("Looking for vehicle commands") 
                 for ep in jsonData:
@@ -363,123 +395,55 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         logging.info ( " 2nd order for vehicles after {0} minutes".format (minutesSecondVehicle))
 
 
+            # collect treatment state of patients
+            logging.info ("collecting patient Treatment-State")
+            for ep in jsonData:
+                if ep["entityId"] not in patientsIdList:
+                    # skip patients not involved
+                    continue
+                if (OOI.patientTreatmentStatePropertyId != ep["entityTypePropertyId"]):
+                    # skip properties I am not interested in
+                    continue
+                # Needs to be a string. If not this is an error. Just silently skip to get an result anyway!
+                if ep["entityTypeProperty"]['entityTypePropertyType'] != 2: 
+                    logging.error (" Property Treatment-State is not of type 2 (String)!")
+                    continue 
+                state = ep["entityPropertyValue"]
+                if state not in statedPatientIdList:
+                    statedPatientIdList[state] = []
+                statedPatientIdList[state].append (ep["entityId"])
+                color = patientsIdColorList[ep["entityId"]]
+                if color not in coloredStatedPatientsIdList:
+                    coloredStatedPatientsIdList[color] = {}
+                if state not in coloredStatedPatientsIdList[color]:
+                    coloredStatedPatientsIdList[color][state] = []
+                coloredStatedPatientsIdList[color][state].append (ep["entityId"])
+            logging.info ("coloredStatedPatientsIdList: {0}".format (coloredStatedPatientsIdList))
 
 
-            if tLastPreTriage == None:
-                logging.info ("looking for patient with Treatment-State == 'Pre-Triaged'")
-                for ep in jsonData:
-                    if ep["entityId"] not in patientsIdList:
-                        # skip patients not involved
-                        continue
-                    if (OOI.patientTreatmentStatePropertyId != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    # Needs to be a string. If not this is an error. Just silently skip to get an result anyway!
-                    if ep["entityTypeProperty"]['entityTypePropertyType'] != 2: 
-                        logging.error (" Property Treatment-State is not of type 2 (String)!")
-                        continue 
-                    if (ep["entityPropertyValue"] == 'Pre-Triaged'):
-                        preTriageList[ep["entityId"]] = 1
+            # Collect patient-related times
+            # First something
+            for state in statedPatientIdList:
+                if state not in tFirstState:
+                    tFirstState[state] = tWsid
+            for color in coloredStatedPatientsIdList:
+                for state in coloredStatedPatientsIdList[color]:
+                    if state not in tFirstColorState[color]:
+                        tFirstColorState[color][state] = tWsid
+            # Last something
+            # Last: All id's are already in this state
+            for state in statedPatientIdList:
+                if state not in tLastState:
+                    if len (statedPatientIdList[state]) == len (patientsIdList):
+                        tLastState[state] = tWsid
+            for color in coloredStatedPatientsIdList:
+                for state in coloredStatedPatientsIdList[color]:
+                    if state not in tLastColorState[color]:
+                        if len (coloredStatedPatientsIdList[color][state]) == len (coloredPatientsIdList[color]):
+                            tLastColorState[color][state] = tWsid
+                        
 
-                logging.info (" {0} out of {1} patients where already pre-triaged".format (len (preTriageList), len (patientsIdList)))
-
-                if len (preTriageList) == len (patientsIdList):
-                    tLastPreTriage = self.getTimeFromICMMws (wsid)
-
-            
-
-            if tFirstRedTreated == None:
-                logging.info ("looking for 1st RED patient with Treatment-State == 'On-Site-Treatment'")
-                for ep in jsonData:
-                    if ep["entityId"] not in redPatientsIdList:
-                        # skip patients not involved
-                        continue
-                    if (OOI.patientTreatmentStatePropertyId != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    # Needs to be a string. If not this is an error. Just silently skip to get an result anyway!
-                    if ep["entityTypeProperty"]['entityTypePropertyType'] != 2: 
-                        logging.error (" Property Treatment-State is not of type 2 (String)!")
-                        continue 
-                    if (ep["entityPropertyValue"] == 'On-Site-Treatment'):
-                        tFirstRedTreated = self.getTimeFromICMMws (wsid)
-                        logging.info (" found red patient with Treatment-State == 'On-Site-Treatment'")
-                        break;
-
-
-
-            if tLastRedTreated == None:
-                logging.info ("looking for RED patient with Treatment-State == 'Treated'")
-                for ep in jsonData:
-                    if ep["entityId"] not in redPatientsIdList:
-                        # skip patients not involved
-                        continue
-                    if (OOI.patientTreatmentStatePropertyId != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    # Needs to be a string. If not this is an error. Just silently skip to get an result anyway!
-                    if ep["entityTypeProperty"]['entityTypePropertyType'] != 2: 
-                        logging.error (" Property Treatment-State is not of type 2 (String)!")
-                        continue 
-                    if (ep["entityPropertyValue"] == 'Treated'):
-                        redTreatedList[ep["entityId"]] = 1
-
-                logging.info (" {0} out of {1} RED patients where already treated".format (len (redTreatedList), len (redPatientsIdList)))
-
-                if len (redTreatedList) == len (redPatientsIdList):
-                    tLastRedTreated = self.getTimeFromICMMws (wsid)
-                
-
-
-
-
-
-            if tLastRedEvacuated == None:
-                logging.info ("looking for RED patient with Treatment-State == 'Evacuating'")
-                for ep in jsonData:
-                    if ep["entityId"] not in redPatientsIdList:
-                        # skip patients not involved
-                        continue
-                    if (OOI.patientTreatmentStatePropertyId != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    # Needs to be a string. If not this is an error. Just silently skip to get an result anyway!
-                    if ep["entityTypeProperty"]['entityTypePropertyType'] != 2: 
-                        logging.error (" Property Treatment-State is not of type 2 (String)!")
-                        continue 
-                    if (ep["entityPropertyValue"] == 'Evacuating'):
-                        redEvacuatedList[ep["entityId"]] = 1
-
-                logging.info (" {0} out of {1} RED patients where already evacuated".format (len (redEvacuatedList), len (redPatientsIdList)))
-
-                if len (redEvacuatedList) == len (redPatientsIdList):
-                    tLastRedEvacuated = self.getTimeFromICMMws (wsid)
-
-
-
-            if tLastRedInHospital == None:
-                logging.info ("looking for RED patient with Treatment-State == 'Evacuated'")
-                for ep in jsonData:
-                    if ep["entityId"] not in redPatientsIdList:
-                        # skip patients not involved
-                        continue
-                    if (OOI.patientTreatmentStatePropertyId != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    # Needs to be a string. If not this is an error. Just silently skip to get an result anyway!
-                    if ep["entityTypeProperty"]['entityTypePropertyType'] != 2: 
-                        logging.error (" Property Treatment-State is not of type 2 (String)!")
-                        continue 
-                    if (ep["entityPropertyValue"] == 'Evacuated'):
-                        redInHospitalList[ep["entityId"]] = 1
-
-                logging.info (" {0} out of {1} RED patients where already in hospital".format (len (redInHospitalList), len (redPatientsIdList)))
-
-                if len (redInHospitalList) == len (redPatientsIdList):
-                    tLastRedInHospital = self.getTimeFromICMMws (wsid)
-                    # logging.info (" setting 'tLastRedInHospital' to {0}".format (tLastRedInHospital.isoformat()))
-
-
+            # Area-related times
             if (tLoadingAreaBuild == None) and ('Loading' in areaIdLists):
                 logging.info ("looking for functional loading area")
                 for ep in jsonData:
@@ -503,7 +467,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         # skip properties I am not interested in
                         continue
                     if ep["entityPropertyValue"]:
-                      tStagingAreaBuild = self.getTimeFromICMMws (wsid)
+                      tStagingAreaBuild = tWsid
                 logging.info (" found functional staging area")
 
             if (tTreatmentAreaBuild == None) and ('Treatment' in areaIdLists):
@@ -516,32 +480,52 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         # skip properties I am not interested in
                         continue
                     if ep["entityPropertyValue"]:
-                      tTreatmentAreaBuild = self.getTimeFromICMMws (wsid)
+                      tTreatmentAreaBuild = tWsid
                 logging.info (" found functional treatment area")
 
 
+        # END of loop over all parent worldstates
+        logging.info ("tFirstState: {0}".format (tFirstState))
+        logging.info ("tLastState:  {0}".format (tLastState))
+        logging.info ("tFirstColorState: {0}".format (tFirstColorState))
+        logging.info ("tLastColorState:  {0}".format (tLastColorState))
 
-            if tLastInHospital == None:
-                logging.info ("looking for patient with Treatment-State == 'Evacuated'")
-                for ep in jsonData:
-                    if ep["entityId"] not in patientsIdList:
-                        # skip patients not involved
-                        continue
-                    if (OOI.patientTreatmentStatePropertyId != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    # Needs to be a string. If not this is an error. Just silently skip to get an result anyway!
-                    if ep["entityTypeProperty"]['entityTypePropertyType'] != 2: 
-                        logging.error (" Property Treatment-State is not of type 2 (String)!")
-                        continue 
-                    if (ep["entityPropertyValue"] == 'Evacuated'):
-                        inHospitalList[ep["entityId"]] = 1
-
-                logging.info (" {0} out of {1} patients where already in hospital".format (len (inHospitalList), len (patientsIdList)))
-
-                if len (inHospitalList) == len (patientsIdList):
-                    tLastInHospital = self.getTimeFromICMMws (wsid)
-
+        # set KPI data
+        # KPI 8
+        if 'PreTriage' in tLastState:
+            self.result['kpi']['Accomplishment']['LastPreTriage']['value'] = (tLastState['PreTriage'] - t0).total_seconds() / 60
+        # KPI 17
+        if 'Evacuated' in tLastState:
+            self.result['kpi']['Accomplishment']['LastInHospital']['value'] = (tLastState['Evacuated'] - t0).total_seconds() / 60
+        # KPI 9
+        if ('RED' in tFirstColorState) and ('Treated' in tFirstColorState['RED']):
+            self.result['kpi']['Accomplishment']['FirstRedTreated']['value'] = (tFirstColorState['RED']['Treated'] - t0).total_seconds() / 60
+        # KPI 10
+        if ('RED' in tLastColorState) and ('Treated' in tLastColorState['RED']):
+            self.result['kpi']['Accomplishment']['LastRedTreated']['value'] = (tLastColorState['RED']['Treated'] - t0).total_seconds() / 60
+        # KPI 11
+        # Evacuated from scene: Evacuating            
+        if ('RED' in tLastColorState) and ('Evacuating' in tLastColorState['RED']):
+            self.result['kpi']['Accomplishment']['LastRedEvacuated']['value'] = (tLastColorState['RED']['Evacuating'] - t0).total_seconds() / 60
+        # KPI 12
+        # in hospital: Evacuated
+        if ('RED' in tLastColorState) and ('Evacuated' in tLastColorState['RED']):
+            self.result['kpi']['Accomplishment']['LastRedInHospital']['value'] = (tLastColorState['RED']['Evacuated'] - t0).total_seconds() / 60
+        # KPI 7
+        if minutesSecondVehicle != None:
+            self.result['kpi']['Tactics']['SecoundResourceRequest']['value'] = minutesSecondVehicle
+        # KPI 15
+        if tLoadingAreaBuild != None:
+            self.result['kpi']['Accomplishment']['LoadingAreaBuild']['value'] = (tLoadingAreaBuild - t0).total_seconds() / 60
+        # KPI 16
+        if tStagingAreaBuild != None:
+            self.result['kpi']['Accomplishment']['StagingAreaBuild']['value'] = (tStagingAreaBuild - t0).total_seconds() / 60
+        # KPI 14
+        if tTreatmentAreaBuild != None:
+            self.result['kpi']['Accomplishment']['TreatmentAreaBuild']['value'] = (tTreatmentAreaBuild - t0).total_seconds() / 60
+        # KPI 5
+        if usedTacticalAreas > -1:
+            self.result['kpi']['Tactics']['UsedTacticalAreas']['value'] = usedTacticalAreas
 
 
 
@@ -565,115 +549,6 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['Tactics']['SecoundResourceRequest']['value'] = minutesSecondVehicle
-
-        if tLastPreTriage != None:
-            self.result['indicator'].append ({
-                    'id': 'LastPreTriage',
-                    'name': "Last patient pre-triaged",
-                    'description': "All patients got pre-triage",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tLastPreTriage.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
-            self.result['kpi']['Accomplishment']['LastPreTriage']['value'] = (tLastPreTriage - t0).total_seconds() / 60
-
-
-        if tFirstRedTreated != None:
-            self.result['indicator'].append ({
-                    'id': 'FirstRedTreated',
-                    'name': "First Red Treated",
-                    'description': "Time until first red patient is treated",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tFirstRedTreated.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
-            self.result['kpi']['Accomplishment']['FirstRedTreated']['value'] = (tFirstRedTreated - t0).total_seconds() / 60
-
-
-        if tLastRedTreated != None:
-            self.result['indicator'].append ({
-                    'id': 'LastRedTreated',
-                    'name': "Last Red Treated",
-                    'description': "Time until all red patients are treated",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tLastRedTreated.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
-            self.result['kpi']['Accomplishment']['LastRedTreated']['value'] = (tLastRedTreated - t0).total_seconds() / 60
-
-
-        if tLastRedEvacuated != None:
-            self.result['indicator'].append ({
-                    'id': 'LastRedEvacuated',
-                    'name': "Last Red Evacuated",
-                    'description': "Time until all red patients are evacuated",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tLastRedEvacuated.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
-            self.result['kpi']['Accomplishment']['LastRedEvacuated']['value'] = (tLastRedEvacuated - t0).total_seconds() / 60
-
-        if tLastRedInHospital != None:
-            self.result['indicator'].append ({
-                    'id': 'LastRedInHospital',
-                    'name': "Last Red in Hospital",
-                    'description': "Time until all red patients are in a Hospital",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tLastRedInHospital.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
-            self.result['kpi']['Accomplishment']['LastRedInHospital']['value'] = (tLastRedInHospital - t0).total_seconds() / 60
 
 
         if tLoadingAreaBuild != None:
@@ -695,7 +570,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['Accomplishment']['LoadingAreaBuild']['value'] = (tLoadingAreaBuild - t0).total_seconds() / 60
+
 
 
         if tStagingAreaBuild != None:
@@ -717,7 +592,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['Accomplishment']['StagingAreaBuild']['value'] = (tStagingAreaBuild - t0).total_seconds() / 60
+
 
 
         if tTreatmentAreaBuild != None:
@@ -739,29 +614,7 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                         "linewidth": 2
                         }
                     })
-            self.result['kpi']['Accomplishment']['TreatmentAreaBuild']['value'] = (tTreatmentAreaBuild - t0).total_seconds() / 60
 
-
-        if tLastInHospital != None:
-            self.result['indicator'].append ({
-                    'id': 'LastInHospital',
-                    'name': "Last in Hospital",
-                    'description': "Time until all patients are in a Hospital",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tLastInHospital.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
-            self.result['kpi']['Accomplishment']['LastInHospital']['value'] = (tLastInHospital - t0).total_seconds() / 60
 
         if usedTacticalAreas > -1:
             data = []
@@ -783,8 +636,73 @@ kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
                     'type': "histogram",
                     'data': data
                     })
-            self.result['kpi']['Tactics']['UsedTacticalAreas']['value'] = usedTacticalAreas
-            
+
+
+        for color in coloredPatientsIdList:
+            for state in tFirstState:
+                if (state == '') or (state == 'None'):
+                    continue
+                # t0..first
+                if (color in tFirstColorState) and (state in tFirstColorState[color]):
+                    self.result['indicator'].append ({
+                            'id': 'First_{0}_{1}'.format (color, state),
+                            'name': "First {0} patient {1}".format (color, state),
+                            'description': "Time until first {0} patients is {1}".format (color, state),
+                            "worldstateDescription": self.worldstateDescription,
+                            "worldstates":[self.ICMMworldstate.id],
+                            'type': "timeintervals",
+                            'data': {
+                                "intervals": [
+                                    {
+                                        "startTime": t0.isoformat(),
+                                        "endTime": tFirstColorState[color][state].isoformat()
+                                        }
+                                    ],
+                                "color": "#00cc00",
+                                "linewidth": 2
+                        }
+                    })
+                # t0..last
+                if (color in tLastColorState) and (state in tLastColorState[color]):
+                    self.result['indicator'].append ({
+                            'id': 'Last_{0}_{1}'.format (color, state),
+                            'name': "Last {0} patient {1}".format (color, state),
+                            'description': "Time until last {0} patients is {1}".format (color, state),
+                            "worldstateDescription": self.worldstateDescription,
+                            "worldstates":[self.ICMMworldstate.id],
+                            'type': "timeintervals",
+                            'data': {
+                                "intervals": [
+                                    {
+                                        "startTime": t0.isoformat(),
+                                        "endTime": tLastColorState[color][state].isoformat()
+                                        }
+                                    ],
+                                "color": "#00cc00",
+                                "linewidth": 2
+                        }
+                    })
+                # first..last
+                if (color in tFirstColorState) and (state in tFirstColorState[color]) and (color in tLastColorState) and (state in tLastColorState[color]):
+                    self.result['indicator'].append ({
+                            'id': 'In_{0}_{1}'.format (color, state),
+                            'name': "{0} patient {1}".format (color, state),
+                            'description': "Time from first to last {0} patient {1}".format (color, state),
+                            "worldstateDescription": self.worldstateDescription,
+                            "worldstates":[self.ICMMworldstate.id],
+                            'type': "timeintervals",
+                            'data': {
+                                "intervals": [
+                                    {
+                                        "startTime": tFirstColorState[color][state].isoformat(),
+                                        "endTime": tLastColorState[color][state].isoformat()
+                                        }
+                                    ],
+                                "color": "#00cc00",
+                                "linewidth": 2
+                        }
+                    })
+
 
        
         # return indicator value structure
