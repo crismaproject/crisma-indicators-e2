@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-14 14:38:56 peter"
+Time-stamp: "2015-04-14 16:00:33 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -411,13 +411,15 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                 state = ep["entityPropertyValue"]
                 if state not in statedPatientIdList:
                     statedPatientIdList[state] = []
-                statedPatientIdList[state].append (ep["entityId"])
+                if ep["entityId"] not in statedPatientIdList[state]:
+                    statedPatientIdList[state].append (ep["entityId"])
                 color = patientsIdColorList[ep["entityId"]]
                 if color not in coloredStatedPatientsIdList:
                     coloredStatedPatientsIdList[color] = {}
                 if state not in coloredStatedPatientsIdList[color]:
                     coloredStatedPatientsIdList[color][state] = []
-                coloredStatedPatientsIdList[color][state].append (ep["entityId"])
+                if ep["entityId"] not in coloredStatedPatientsIdList[color][state]:
+                    coloredStatedPatientsIdList[color][state].append (ep["entityId"])
             logging.info ("coloredStatedPatientsIdList: {0}".format (coloredStatedPatientsIdList))
 
 
