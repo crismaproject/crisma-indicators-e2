@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-14 14:17:07 peter"
+Time-stamp: "2015-04-14 14:38:56 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -536,7 +536,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                     'name': "Secound Resource Request",
                     'description': "Time until Secound Resource Request",
                     "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
+                    "worldstates": parents,
                     'type': "timeintervals",
                     'data': {
                         "intervals": [
@@ -557,7 +557,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                     'name': "Loading Area Build",
                     'description': "Time until first loading area is build",
                     "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
+                    "worldstates": parents,
                     'type': "timeintervals",
                     'data': {
                         "intervals": [
@@ -579,7 +579,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                     'name': "Staging Area Build",
                     'description': "Time until first staging area is build",
                     "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
+                    "worldstates": parents,
                     'type': "timeintervals",
                     'data': {
                         "intervals": [
@@ -601,7 +601,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                     'name': "Treatment Area Build",
                     'description': "Time until first treatment area is build",
                     "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
+                    "worldstates": parents,
                     'type': "timeintervals",
                     'data': {
                         "intervals": [
@@ -632,7 +632,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                     'name': "Used Tactical Areas",
                     'description': "Number of tactical areas used",
                     "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[self.ICMMworldstate.id],
+                    "worldstates": parents,
                     'type': "histogram",
                     'data': data
                     })
@@ -649,7 +649,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                             'name': "First {0} patient {1}".format (color, state),
                             'description': "Time until first {0} patients is {1}".format (color, state),
                             "worldstateDescription": self.worldstateDescription,
-                            "worldstates":[self.ICMMworldstate.id],
+                            "worldstates": parents,
                             'type': "timeintervals",
                             'data': {
                                 "intervals": [
@@ -669,7 +669,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                             'name': "Last {0} patient {1}".format (color, state),
                             'description': "Time until last {0} patients is {1}".format (color, state),
                             "worldstateDescription": self.worldstateDescription,
-                            "worldstates":[self.ICMMworldstate.id],
+                            "worldstates": parents,
                             'type': "timeintervals",
                             'data': {
                                 "intervals": [
@@ -689,7 +689,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                             'name': "{0} patient {1}".format (color, state),
                             'description': "Time from first to last {0} patient {1}".format (color, state),
                             "worldstateDescription": self.worldstateDescription,
-                            "worldstates":[self.ICMMworldstate.id],
+                            "worldstates": parents,
                             'type': "timeintervals",
                             'data': {
                                 "intervals": [

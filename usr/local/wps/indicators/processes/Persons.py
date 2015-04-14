@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-08 17:47:24 peter"
+Time-stamp: "2015-04-14 14:43:13 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -240,7 +240,7 @@ kpi;RespondersPerPatient; Responders per Patient: Responder / Patient ratio;numb
                     'name': "Responders",
                     'description': "Number of Responders",
                     "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[icmmWorldstates],
+                    "worldstates": icmmWorldstates,
                     'type': "number",
                     'data': numberOfResponders
                     },
@@ -249,7 +249,7 @@ kpi;RespondersPerPatient; Responders per Patient: Responder / Patient ratio;numb
                     'name': "Responder per Patient",
                     'description': "Responder / Patient ratio",
                     "worldstateDescription": self.worldstateDescription,
-                    "worldstates":[icmmWorldstates],
+                    "worldstates": icmmWorldstates,
                     'type': "number",
                     'data': respondersPerPatient
                     }
