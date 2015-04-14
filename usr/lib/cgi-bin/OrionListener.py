@@ -31,7 +31,7 @@ import string
 import time
 
 # list of indicators to calculate for each new worldstate
-indicators = ['PatientHealth', 'Deaths', 'Improved', 'ResourceDepleted', 'EffectiveResponse', 'Evacuation', 'UnusedResources']
+indicators = ['Persons', 'Times', 'Weather']
 
 
 # WPS service
