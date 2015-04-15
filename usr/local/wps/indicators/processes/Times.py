@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-14 16:00:33 peter"
+Time-stamp: "2015-04-15 10:48:10 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -112,7 +112,11 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
         ts = jsonData['simulatedTime']
         if (len(ts) == 16):
             ts = ts + ":00.0Z"
-        return dateutil.parser.parse (ts)
+        if (len(ts) == 19):
+            ts = ts + "Z"
+        t = dateutil.parser.parse (ts)
+        # logging.info (" getTimeFromICMMws: '{0}' -> {1}".format (ts, t))
+        return t
 
     def calculateIndicator(self):
         # Define values to be used if indicator can not be calculated (e.g. missing input data)
@@ -456,7 +460,7 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                         # skip properties I am not interested in
                         continue
                     if ep["entityPropertyValue"]:
-                        tLoadingAreaBuild = self.getTimeFromICMMws (wsid)
+                        tLoadingAreaBuild = tWsid
                 logging.info (" found functional loading area")
                         
             if (tStagingAreaBuild == None) and ('Staging' in areaIdLists):
