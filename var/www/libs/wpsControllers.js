@@ -6,6 +6,7 @@ wpsApp.controller ('wpsCtrl', function ($scope, $http) {
     // default values
     $scope.serverTmp = "https://crisma-pilotE.ait.ac.at"
     $scope.wpsEndpointTmp = $scope.serverTmp + "/indicators/cgi-bin/pywps.cgi";
+    // $scope.wpsEndpointTmp = "cgi-bin/pywps.cgi";
     $scope.icmmEndpointTmp = $scope.serverTmp + "/icmm_api";
 
     // really used values

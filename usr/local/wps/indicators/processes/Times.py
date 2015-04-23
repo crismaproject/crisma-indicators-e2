@@ -1,7 +1,7 @@
 """
 Peter Kutschera, 2013-09-11
 Update to create KPI also, 2014-11-27
-Time-stamp: "2015-04-15 10:48:10 peter"
+Time-stamp: "2015-04-23 12:20:51 peter"
 
 The server gets an ICMM worldstate URL and calculates an indicator and an KPI from OOI-data
 
@@ -71,7 +71,7 @@ kpi;LastRedTreated;Last red Patient treated;Time until all red patients are trea
 kpi;LastRedEvacuated;Last red Patient evacuated;Time until all red patients are evacuated;number
 kpi;LastRedInHospital;Last red Patient in Hospital;Time until all red patients are in a hospital;number
 
-kpi;SecoundResourceRequest;Secound Resource Request;Time until Secound Resource Request;number
+kpi;SecondResourceRequest;Second Resource Request;Time until Second Resource Request;number
 
 kpi;LoadingAreaBuild;Loading-Area build;Time until first loading area is build;number
 kpi;StagingAreaBuild;Staging-Area build;Time until first staging area is build;number
@@ -80,15 +80,19 @@ kpi;TreatmentAreaBuild;Treatment-Area build;Time until first treatment area is b
 kpi;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;number
 
 
-indicator;SecoundResourceRequest;Secound Resource Request;Time until Secound Resource Request;timeintervals
-indicator;LoadingAreaBuild;Loading-Area build;Time until first loading area is build;timeintervals
-indicator;StagingAreaBuild;Staging-Area build;Time until first staging area is build;timeintervals
-indicator;TreatmentAreaBuild;Treatment-Area build;Time until first treatment area is build;timeintervals
+indicator;SecondResourceRequest;Second Resource Request;Time until Second Resource Request;timeintervals
 indicator;UsedTacticalAreas;Used Tactical Areas;Number of tactical areas used;histogram
+
+indicator;First_State;First Patient in state;From start to first Patient in treatment state;timeintervals
+indicator;Last_State;Last Patient in state;From start till last Patient in treatment state;timeintervals
+indicator;In_State;First to last Patient in state;From first Patient to last Patient in treatment state;timeintervals
 
 indicator;First_Color_State;First injury-type Patient in state;From start to first Patient of injury type in treatment state;timeintervals
 indicator;Last_Color_State;Last injury-type Patient in state;From start till last Patient of injury type in treatment state;timeintervals
 indicator;In_Color_State;First to last injury-type Patient in state;From first Patient to last Patient of injury type in treatment state;timeintervals
+
+indicator;BuildingAreas;Building Areas;Time while areas are build;timeintervals
+indicator;Building_Type_Areas;Building Type Areas;Time while areas of type Type are build;timeintervals
 
 
 """)
@@ -127,8 +131,8 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                     "displayName": "Tactics",
                     "iconResource": "flower_16.png",
 
-                    "SecoundResourceRequest": {
-                        "displayName": "Secound Resource Request",
+                    "SecondResourceRequest": {
+                        "displayName": "Second Resource Request",
                         "iconResource": "flower_dead_16.png",
                         "value": -1,
                         "unit": "minutes"
@@ -218,14 +222,14 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
         t0 = self.getTimeFromICMMws (basewsid)  # incident time
         # tNow = self.getTimeFromICMMws (self.ICMMworldstate.id) # this WorldState
         minutesSecondVehicle = None  # 2nd vehicle request
-        tLastPreTriage = None  # Last patient has been pre-triaged
+        #tLastPreTriage = None  # Last patient has been pre-triaged
         #tFirstRedTreated = None # 1st red patient treated
         #tLastRedTreated = None # last red patient treated
         #tLastRedEvacuated = None # last red patient evacuated
         #tLastRedInHospital = None # last red patient in hospital
-        tLoadingAreaBuild = None 
-        tStagingAreaBuild = None
-        tTreatmentAreaBuild = None
+        #tLoadingAreaBuild = None 
+        #tStagingAreaBuild = None
+        #tTreatmentAreaBuild = None
         #tLastInHospital = None # last patient in hospital
         usedTacticalAreas = -1
 
@@ -253,8 +257,30 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
         tLastState = None
         #  {'RED': {'Evacuated': time, ..},..}
         tLastColorState = None
+
         # Area lists
+        #  interesting area types
+        tacticalAreas = ['Danger-Zone', 'Advanced-Medical-Post', 'Treatment', 'Loading', 'Staging']
+        #  the rest is only filled for interesting areas
+        #  {'Loading": [id, ...],..}
         areaIdLists = None
+        #  {id: 'Loading", ...}
+        areaIdListsAll = None
+        # already build
+        #  [id, ...]
+        areaBuildIds = []
+        #  {'Loading": {id,..] ...}
+        areaBuildIdsType = {}
+        # times
+        #  time
+        tFirstArea = None
+        #  time
+        tLastArea = None
+        #  {'Loading': time, ..}
+        tFirstAreaType = {}
+        #  {'Loading': time, ..}
+        tLastAreaType = {}
+
         # Vehicle command times
         vehicleCommandTimes = []
 
@@ -356,7 +382,6 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                     areaIdListsAll[ep["entityId"]] = areaType
                 logging.info (" looking for active areas within {0} existing areas".format (len (areaIdListsAll)))
                 areaIdLists = {}
-                tacticalAreas = ['Danger-Zone', 'Advanced-Medical-Post', 'Treatment', 'Loading', 'Staging']
                 usedTacticalAreas = 0
                 for ep in jsonData:
                     if (547!= ep["entityTypePropertyId"]):       # Area IsEnabled
@@ -450,51 +475,46 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                         
 
             # Area-related times
-            if (tLoadingAreaBuild == None) and ('Loading' in areaIdLists):
-                logging.info ("looking for functional loading area")
-                for ep in jsonData:
-                    if ep["entityId"] not in areaIdLists['Loading']:
-                        # skip other areas
-                        continue
-                    if (546 != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    if ep["entityPropertyValue"]:
-                        tLoadingAreaBuild = tWsid
-                logging.info (" found functional loading area")
-                        
-            if (tStagingAreaBuild == None) and ('Staging' in areaIdLists):
-                logging.info ("looking for functional staging area")
-                for ep in jsonData:
-                    if ep["entityId"] not in areaIdLists['Staging']:
-                        # skip other areas
-                        continue
-                    if (546 != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    if ep["entityPropertyValue"]:
-                      tStagingAreaBuild = tWsid
-                logging.info (" found functional staging area")
-
-            if (tTreatmentAreaBuild == None) and ('Treatment' in areaIdLists):
-                logging.info ("looking for functional treatment area")
-                for ep in jsonData:
-                    if ep["entityId"] not in areaIdLists['Treatment']:
-                        # skip other areas
-                        continue
-                    if (546 != ep["entityTypePropertyId"]):
-                        # skip properties I am not interested in
-                        continue
-                    if ep["entityPropertyValue"]:
-                      tTreatmentAreaBuild = tWsid
-                logging.info (" found functional treatment area")
-
+            logging.info ("collecting Area state information")
+            for ep in jsonData:
+                eid = ep["entityId"]
+                if eid not in areaIdListsAll:
+                    # skip patients not involved
+                    continue
+                if (546 != ep["entityTypePropertyId"]):
+                    # skip properties I am not interested in
+                    continue
+                # Needs to be a string. If not this is an error. Just silently skip to get an result anyway!
+                build = ep["entityPropertyValue"]
+                if build:
+                    # updates what has been build already
+                    if eid not in areaBuildIds:
+                        areaBuildIds.append (eid)
+                    areaType = areaIdListsAll[eid]
+                    if areaType not in areaBuildIdsType:
+                        areaBuildIdsType[areaType] = []
+                    if eid not in areaBuildIdsType[areaType]:
+                        areaBuildIdsType[areaType].append(eid)
+                    # anything relevant changed?
+                    if tFirstArea == None:
+                        tFirstArea = tWsid
+                    if (tLastArea == None) and (len (areaBuildIds) == len (areaIdListsAll)):
+                        tLastArea = tWsid
+                    if areaType not in tFirstAreaType:
+                        tFirstAreaType[areaType] = tWsid
+                    if (areaType not in tLastAreaType) and (areaType in areaBuildIdsType) and (areaType in areaIdLists) and (len (areaBuildIdsType[areaType]) == len (areaIdLists[areaType])):
+                        tLastAreaType[areaType] = tWsid
 
         # END of loop over all parent worldstates
         logging.info ("tFirstState: {0}".format (tFirstState))
         logging.info ("tLastState:  {0}".format (tLastState))
         logging.info ("tFirstColorState: {0}".format (tFirstColorState))
         logging.info ("tLastColorState:  {0}".format (tLastColorState))
+
+        logging.info ("tFirstArea: {0}".format (tFirstArea))
+        logging.info ("tLastArea:  {0}".format (tLastArea))
+        logging.info ("tFirstAreaType: {0}".format (tFirstAreaType))
+        logging.info ("tLastAreaType:  {0}".format (tLastAreaType))
 
         # set KPI data
         # KPI 8
@@ -519,16 +539,16 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
             self.result['kpi']['Accomplishment']['LastRedInHospital']['value'] = (tLastColorState['RED']['Evacuated'] - t0).total_seconds() / 60
         # KPI 7
         if minutesSecondVehicle != None:
-            self.result['kpi']['Tactics']['SecoundResourceRequest']['value'] = minutesSecondVehicle
+            self.result['kpi']['Tactics']['SecondResourceRequest']['value'] = minutesSecondVehicle
         # KPI 15
-        if tLoadingAreaBuild != None:
-            self.result['kpi']['Accomplishment']['LoadingAreaBuild']['value'] = (tLoadingAreaBuild - t0).total_seconds() / 60
+        if 'Loading' in tFirstAreaType:
+            self.result['kpi']['Accomplishment']['LoadingAreaBuild']['value'] = (tFirstAreaType ['Loading'] - t0).total_seconds() / 60
         # KPI 16
-        if tStagingAreaBuild != None:
-            self.result['kpi']['Accomplishment']['StagingAreaBuild']['value'] = (tStagingAreaBuild - t0).total_seconds() / 60
+        if 'Staging' in tFirstAreaType:
+            self.result['kpi']['Accomplishment']['LoadingAreaBuild']['value'] = (tFirstAreaType ['Staging'] - t0).total_seconds() / 60
         # KPI 14
-        if tTreatmentAreaBuild != None:
-            self.result['kpi']['Accomplishment']['TreatmentAreaBuild']['value'] = (tTreatmentAreaBuild - t0).total_seconds() / 60
+        if 'Treatment' in tFirstAreaType:
+            self.result['kpi']['Accomplishment']['LoadingAreaBuild']['value'] = (tFirstAreaType ['Treatment'] - t0).total_seconds() / 60
         # KPI 5
         if usedTacticalAreas > -1:
             self.result['kpi']['Tactics']['UsedTacticalAreas']['value'] = usedTacticalAreas
@@ -538,9 +558,9 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
         # create indicator value structure
         if minutesSecondVehicle != None:
             self.result['indicator'].append ({
-                    'id': 'SecoundResourceRequest',
-                    'name': "Secound Resource Request",
-                    'description': "Time until Secound Resource Request",
+                    'id': 'SecondResourceRequest',
+                    'name': "Second Resource Request",
+                    'description': "Time until Second Resource Request",
                     "worldstateDescription": self.worldstateDescription,
                     "worldstates": parents,
                     'type': "timeintervals",
@@ -556,70 +576,6 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                         }
                     })
 
-
-        if tLoadingAreaBuild != None:
-            self.result['indicator'].append ({
-                    'id': 'LoadingAreaBuild',
-                    'name': "Loading Area Build",
-                    'description': "Time until first loading area is build",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates": parents,
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tLoadingAreaBuild.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
-
-
-
-        if tStagingAreaBuild != None:
-            self.result['indicator'].append ({
-                    'id': 'StaggingAreaBuild',
-                    'name': "Staging Area Build",
-                    'description': "Time until first staging area is build",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates": parents,
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tStagingAreaBuild.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
-
-
-
-        if tTreatmentAreaBuild != None:
-            self.result['indicator'].append ({
-                    'id': 'TreatmentAreaBuild',
-                    'name': "Treatment Area Build",
-                    'description': "Time until first treatment area is build",
-                    "worldstateDescription": self.worldstateDescription,
-                    "worldstates": parents,
-                    'type': "timeintervals",
-                    'data': {
-                        "intervals": [
-                            {
-                                "startTime": t0.isoformat(),
-                                "endTime": tTreatmentAreaBuild.isoformat()
-                                }
-                            ],
-                        "color": "#00cc00",
-                        "linewidth": 2
-                        }
-                    })
 
 
         if usedTacticalAreas > -1:
@@ -643,6 +599,69 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                     'data': data
                     })
 
+
+        for state in tFirstState:
+            if (state == '') or (state == 'None'):
+                continue
+            # t0..first
+            self.result['indicator'].append ({
+                    'id': 'First_{0}'.format (state),
+                    'name': "First patient {0}".format (state),
+                    'description': "Time until first patient is {0}".format (state),
+                    "worldstateDescription": self.worldstateDescription,
+                    "worldstates": parents,
+                    'type': "timeintervals",
+                    'data': {
+                        "intervals": [
+                            {
+                                "startTime": t0.isoformat(),
+                                "endTime": tFirstState[state].isoformat()
+                                }
+                            ],
+                        "color": "#00cc00",
+                        "linewidth": 2
+                        }
+                    })
+            # t0..last
+            if (state in tLastState):
+                self.result['indicator'].append ({
+                        'id': 'Last_{0}'.format (state),
+                        'name': "Last patient {0}".format (state),
+                        'description': "Time until last patient is {0}".format (state),
+                        "worldstateDescription": self.worldstateDescription,
+                        "worldstates": parents,
+                        'type': "timeintervals",
+                        'data': {
+                            "intervals": [
+                                {
+                                    "startTime": t0.isoformat(),
+                                    "endTime": tLastState[state].isoformat()
+                                    }
+                                ],
+                            "color": "#00cc00",
+                            "linewidth": 2
+                            }
+                        })
+                # first..last
+                self.result['indicator'].append ({
+                        'id': 'In_{0}'.format (state),
+                        'name': "Patient {0}".format (state),
+                        'description': "Time from first to last patient {0}".format (state),
+                        "worldstateDescription": self.worldstateDescription,
+                        "worldstates": parents,
+                        'type': "timeintervals",
+                        'data': {
+                            "intervals": [
+                                {
+                                    "startTime": tFirstState[state].isoformat(),
+                                    "endTime": tLastState[state].isoformat()
+                                    }
+                                ],
+                            "color": "#00cc00",
+                            "linewidth": 2
+                            }
+                        })
+                
 
         for color in coloredPatientsIdList:
             for state in tFirstState:
@@ -708,6 +727,49 @@ indicator;In_Color_State;First to last injury-type Patient in state;From first P
                                 "linewidth": 2
                         }
                     })
+
+
+        if (tFirstArea != None) and (tLastArea != None):
+            self.result['indicator'].append ({
+                    'id': 'BuildingAreas',
+                    'name': "Building Areas",
+                    'description': "Time from first to last area build",
+                    "worldstateDescription": self.worldstateDescription,
+                    "worldstates": parents,
+                    'type': "timeintervals",
+                    'data': {
+                        "intervals": [
+                            {
+                                "startTime": tFirstArea.isoformat(),
+                                "endTime": tLastArea.isoformat()
+                                }
+                            ],
+                        "color": "#00cc00",
+                        "linewidth": 2
+                        }
+                    })
+
+
+        for areaType in tacticalAreas:
+            if (areaType in tFirstAreaType) and (areaType in tLastAreaType):
+                self.result['indicator'].append ({
+                        'id': 'Building_{0}_Area'.format (areaType),
+                        'name': 'Building {0} Area'.format (areaType),
+                        'description': "Time from first to last {0} area build".format (areaType),
+                        "worldstateDescription": self.worldstateDescription,
+                        "worldstates": parents,
+                        'type': "timeintervals",
+                        'data': {
+                            "intervals": [
+                                {
+                                    "startTime": tFirstAreaType[areaType].isoformat(),
+                                    "endTime": tLastAreaType[areaType].isoformat()
+                                    }
+                                ],
+                            "color": "#00cc00",
+                            "linewidth": 2
+                            }
+                        })
 
 
        
